@@ -4,13 +4,13 @@ plugins {
 }
 
 android {
-    namespace = "com.ryzen.tvremote"
+    namespace = "com.shieldremote.app"
     compileSdk {
         version = release(37)
     }
 
     defaultConfig {
-        applicationId = "com.ryzen.tvremote"
+        applicationId = "com.shieldremote.app"
         minSdk = 24
         targetSdk = 37
         versionCode = 5
@@ -50,7 +50,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
-    implementation("androidx.graphics:graphics-shapes:1.0.1")
     implementation("com.google.protobuf:protobuf-javalite:3.25.5")
     implementation("org.bouncycastle:bcprov-jdk18on:1.80")
     implementation("org.bouncycastle:bcpkix-jdk18on:1.80")

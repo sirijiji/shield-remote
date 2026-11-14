@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package pairing;
 
-option java_package = "com.ryzen.tvremote.protocol.pairing";
+option java_package = "com.shieldremote.app.protocol.pairing";
 option java_outer_classname = "PairingProto";
 option java_multiple_files = true;
 
