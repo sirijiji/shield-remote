@@ -2,76 +2,73 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Shield Remote — redesign</title>
+<title>Shield Remote — SHIELD-style redesign</title>
 <style>
   :root { color-scheme: dark; }
   body {
     margin: 0;
     padding: 40px 32px 56px;
-    background: #020617;
-    color: #F8FAFC;
-    font: 400 14px/1.5 Inter, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #141414;
+    color: #FFFFFF;
+    font: 400 14px/1.5 Roboto, -apple-system, "Segoe UI", sans-serif;
   }
-  header { max-width: 1100px; margin: 0 auto 32px; }
-  .eyebrow {
-    font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; color: #94A3B8;
-  }
-  h1 { font-size: 34px; font-weight: 300; letter-spacing: -1px; margin: 10px 0 8px; }
-  p { color: #94A3B8; margin: 0; max-width: 62ch; }
-  .rule { height: 1px; background: #334155; margin: 28px 0; }
-  .row { display: flex; gap: 20px; max-width: 1100px; margin: 0 auto; }
+  header { max-width: 1180px; margin: 0 auto 28px; }
+  .eyebrow { font-size: 12px; letter-spacing: .5px; color: #9E9E9E; }
+  h1 { font-size: 34px; font-weight: 400; margin: 8px 0 10px; }
+  p { color: #9E9E9E; margin: 0; max-width: 70ch; }
+  .rule { height: 1px; background: #3A3A3A; margin: 26px 0; }
+  .row { display: flex; gap: 16px; max-width: 1180px; margin: 0 auto; align-items: flex-start; }
   figure { flex: 1; margin: 0; }
-  figure img {
-    width: 100%; display: block; border: 1px solid #334155; background: #0A0E1C;
-  }
-  figcaption {
-    margin-top: 10px; font-size: 11px; letter-spacing: 1.4px;
-    text-transform: uppercase; color: #94A3B8;
-  }
+  figure img { width: 100%; display: block; background: #1A1A1A; border-radius: 6px; }
+  figcaption { margin-top: 10px; font-size: 12px; color: #9E9E9E; }
   .meta {
-    max-width: 1100px; margin: 32px auto 0; display: grid;
-    grid-template-columns: repeat(4, 1fr); gap: 20px;
-    font-size: 12px; color: #94A3B8;
+    max-width: 1180px; margin: 30px auto 0; display: grid;
+    grid-template-columns: repeat(5, 1fr); gap: 16px; font-size: 12px; color: #9E9E9E;
   }
-  .meta b { display: block; color: #F8FAFC; font-weight: 500; margin-bottom: 4px; }
-  code { color: #F8FAFC; }
+  .meta b { display: block; color: #FFFFFF; font-weight: 500; margin-bottom: 3px; }
+  .sw { display:inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 6px; }
 </style>
 </head>
 <body>
   <header>
     <div class="eyebrow">Shield Remote · com.shieldremote.app</div>
-    <h1>Swiss control panel</h1>
-    <p>Restyle driven by the ui-ux-pro-max skill: Minimalism &amp; Swiss Style, the Digital
-       Signage palette, Inter. Zero corner radius, no shadows, one red accent, structure from
-       1dp rules.</p>
+    <h1>Same language as the SHIELD app</h1>
+    <p>Three flat grey bars, one large trackpad slab, two plain key rows. Hairlines instead of cards,
+       drawn nav/transport glyphs instead of an icon font, and NVIDIA green only where something is
+       live.</p>
   </header>
 
   <div class="rule"></div>
 
   <div class="row">
     <figure>
-      <img src="screens/01-swipe.png" alt="Swipe mode">
-      <figcaption>Swipe · connected</figcaption>
+      <img src="screens/01-trackpad.png" alt="Trackpad mode">
+      <figcaption>Trackpad · connected</figcaption>
     </figure>
     <figure>
       <img src="screens/02-dpad.png" alt="D-pad mode">
       <figcaption>D-pad · connected</figcaption>
     </figure>
     <figure>
-      <img src="screens/03-settings.png" alt="Settings sheet">
-      <figcaption>Settings · square toggles</figcaption>
+      <img src="screens/03-apps.png" alt="Apps drawer open">
+      <figcaption>Apps drawer</figcaption>
     </figure>
     <figure>
-      <img src="screens/04-light.png" alt="Light theme">
+      <img src="screens/04-settings.png" alt="Settings sheet">
+      <figcaption>Settings</figcaption>
+    </figure>
+    <figure>
+      <img src="screens/05-light.png" alt="Light theme">
       <figcaption>Light theme</figcaption>
     </figure>
   </div>
 
   <div class="meta">
-    <div><b>Type</b>Inter, bundled (OFL)</div>
-    <div><b>Canvas</b>#020617 · rules #334155</div>
-    <div><b>Accent</b>#EF4444 — power, mute, voice, failure</div>
-    <div><b>Radius</b>0dp everywhere</div>
+    <div><b>Bars</b><span class="sw" style="background:#1E1E1E"></span>#1E1E1E · rows #1A1A1A</div>
+    <div><b>Pad</b><span class="sw" style="background:#2B2B2B"></span>#2B2B2B · 6dp radius</div>
+    <div><b>Signal</b><span class="sw" style="background:#76B900"></span>#76B900 · live only</div>
+    <div><b>Type</b>Platform face, regular weight</div>
+    <div><b>Glyphs</b>Drawn on a 24-unit grid</div>
   </div>
 </body>
 </html>
