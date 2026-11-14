@@ -4,7 +4,6 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,8 +12,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Mic
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.PowerSettingsNew
-import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.automirrored.rounded.VolumeOff
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,106 +34,129 @@ import com.shieldremote.app.ui.theme.Motion
 import com.shieldremote.app.ui.theme.RemoteTheme
 
 /**
- * Header: a status square, the device name, and two keys, closed by a 1dp rule. No card, no
- * rounded container, no elevation.
+ * SHIELD's top bar: device switcher on the left, then mic, volume and power on the right. The
+ * connected state is the only place green appears.
  */
 @Composable
 fun TopBar(
     status: ConnectionStatus,
     deviceName: String,
     hasTv: Boolean,
+    isMuted: Boolean,
     onDevicePickerClick: () -> Unit,
     onPowerKey: (KeyDirection) -> Unit,
+    onMuteClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onVoiceClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scheme = MaterialTheme.colorScheme
     val connected = status is ConnectionStatus.Connected
 
-    val statusLabel = when (status) {
-        is ConnectionStatus.Connected -> "Connected"
-        is ConnectionStatus.Connecting -> "Connecting"
-        is ConnectionStatus.NeedsPairing -> "Pairing"
-        is ConnectionStatus.Error -> "No connection"
-        is ConnectionStatus.Disconnected -> if (hasTv) "Offline" else "No TV"
-    }
-
-    val squareColor by animateColorAsState(
+    val dotColor by animateColorAsState(
         targetValue = when (status) {
             is ConnectionStatus.Connected -> RemoteTheme.status.success
-            is ConnectionStatus.Connecting, is ConnectionStatus.NeedsPairing -> RemoteTheme.status.warning
+            is ConnectionStatus.Connecting, is ConnectionStatus.NeedsPairing -> scheme.onSurfaceVariant
             is ConnectionStatus.Error -> scheme.error
             is ConnectionStatus.Disconnected -> scheme.outline
         },
         animationSpec = Motion.effects(),
-        label = "squareColor"
-    )
-    val labelColor by animateColorAsState(
-        targetValue = when (status) {
-            is ConnectionStatus.Error -> scheme.error
-            else -> scheme.onSurfaceVariant
-        },
-        animationSpec = Motion.effects(),
-        label = "labelColor"
+        label = "dotColor"
     )
 
-    Column(modifier = modifier.fillMaxWidth()) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .background(scheme.surfaceContainer)
+            .padding(start = 16.dp, end = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(64.dp)
-                .padding(start = 20.dp, end = 8.dp),
+                .weight(1f)
+                .clickable(role = Role.Button, onClick = onDevicePickerClick)
+                .padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
+            GlyphChevronDown(size = 14.dp, tint = scheme.onSurface)
+            Spacer(Modifier.width(10.dp))
+            Box(
                 modifier = Modifier
-                    .weight(1f)
-                    .clickable(role = Role.Button, onClick = onDevicePickerClick),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .background(squareColor)
-                )
-                Spacer(Modifier.width(14.dp))
-                Column {
-                    Text(
-                        text = if (hasTv) deviceName else "No TV selected",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = scheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = statusLabel.uppercase(),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = labelColor,
-                        maxLines = 1
-                    )
-                }
-            }
-
-            HoldableKey(
-                icon = Icons.Rounded.PowerSettingsNew,
-                description = "Power",
-                longPressLabel = "Power menu",
-                onKey = onPowerKey,
-                size = 44.dp,
-                iconSize = 19.dp,
-                color = Color.Transparent,
-                contentColor = if (connected) scheme.tertiary else scheme.outline,
-                enabled = connected
+                    .size(6.dp)
+                    .background(dotColor, MaterialTheme.shapes.extraSmall)
             )
-            IconSurface(
-                icon = Icons.Rounded.Settings,
-                description = "Settings",
-                onClick = onSettingsClick,
-                size = 44.dp,
-                iconSize = 19.dp,
-                contentColor = scheme.onSurfaceVariant
+            Spacer(Modifier.width(10.dp))
+            Text(
+                text = if (hasTv) deviceName else "Select TV",
+                style = MaterialTheme.typography.titleMedium,
+                color = scheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
-        Rule()
+
+        BarKey(
+            description = "Voice search",
+            enabled = connected,
+            tint = scheme.onSurface,
+            onClick = onVoiceClick
+        ) { tint ->
+            Icon(Icons.Rounded.Mic, null, tint = tint, modifier = Modifier.size(20.dp))
+        }
+        BarKey(
+            description = if (isMuted) "Unmute" else "Mute",
+            enabled = connected,
+            tint = if (isMuted) scheme.tertiary else scheme.onSurface,
+            onClick = onMuteClick
+        ) { tint ->
+            Icon(
+                imageVector = if (isMuted) Icons.AutoMirrored.Rounded.VolumeOff else Icons.AutoMirrored.Rounded.VolumeUp,
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier.size(21.dp)
+            )
+        }
+        IconSurface(
+            icon = Icons.Rounded.MoreVert,
+            description = "Settings",
+            onClick = onSettingsClick,
+            size = 44.dp,
+            iconSize = 20.dp,
+            color = Color.Transparent,
+            contentColor = scheme.onSurfaceVariant
+        )
+        HoldableKey(
+            icon = Icons.Rounded.PowerSettingsNew,
+            description = "Power",
+            longPressLabel = "Power menu",
+            onKey = onPowerKey,
+            size = 44.dp,
+            iconSize = 20.dp,
+            color = Color.Transparent,
+            contentColor = if (connected) scheme.onSurface else scheme.outline,
+            enabled = connected
+        )
+    }
+}
+
+/** Square-ish ghost key sized for a 56dp bar. */
+@Composable
+private fun BarKey(
+    description: String,
+    enabled: Boolean,
+    tint: Color,
+    onClick: () -> Unit,
+    content: @Composable (Color) -> Unit
+) {
+    PressSurface(
+        onClick = onClick,
+        modifier = Modifier.size(44.dp),
+        color = Color.Transparent,
+        contentColor = tint,
+        enabled = enabled,
+        description = description
+    ) {
+        content(tint)
     }
 }

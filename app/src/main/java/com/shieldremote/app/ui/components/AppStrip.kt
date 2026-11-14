@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
@@ -67,8 +69,8 @@ fun AppTileIcon(
     Box(
         modifier = modifier
             .size(size)
-            .border(1.dp, scheme.outlineVariant)
-            .background(scheme.surfaceContainerLow),
+            .clip(RoundedCornerShape(4.dp))
+            .background(scheme.surfaceContainerHigh),
         contentAlignment = Alignment.Center
     ) {
         if (glyph != null) {
@@ -144,14 +146,13 @@ fun AppStrip(
             PressSurface(
                 onClick = onAdd,
                 modifier = Modifier.size(TileSize),
-                color = Color.Transparent,
-                border = scheme.outlineVariant,
+                color = scheme.surfaceContainerHigh,
                 description = "Add app"
             ) {
                 androidx.compose.material3.Icon(
                     Icons.Rounded.Add,
                     contentDescription = null,
-                    tint = scheme.onSurfaceVariant,
+                    tint = scheme.onSurface,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -159,7 +160,7 @@ fun AppStrip(
     }
 }
 
-private val TileSize = 56.dp
+private val TileSize = 48.dp
 
 @Composable
 private fun AppButton(

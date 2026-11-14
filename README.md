@@ -3,13 +3,13 @@
 An Android remote for NVIDIA SHIELD / Android TV, over Wi-Fi. No ads, no tracking, no root, no ADB.
 
 This is a personal fork of [souravkl11/android-tv-remote](https://github.com/souravkl11/android-tv-remote),
-restyled with the **ui-ux-pro-max** skill and re-published under a new application id. The protocol,
-pairing, discovery and key handling are the upstream implementation; the visual layer, the app name
-and the package are not.
+restyled to match **NVIDIA's own SHIELD TV remote app** and re-published under a new application id.
+The protocol, pairing, discovery and key handling are the upstream implementation; the visual layer,
+the app name and the package are not.
 
-| Swipe | D-pad | Settings | Light theme |
-| --- | --- | --- | --- |
-| ![](docs/screens/01-swipe.png) | ![](docs/screens/02-dpad.png) | ![](docs/screens/03-settings.png) | ![](docs/screens/04-light.png) |
+| Trackpad | D-pad | Apps | Settings | Light |
+| --- | --- | --- | --- | --- |
+| ![](docs/screens/01-trackpad.png) | ![](docs/screens/02-dpad.png) | ![](docs/screens/03-apps.png) | ![](docs/screens/04-settings.png) | ![](docs/screens/05-light.png) |
 
 ## Features
 
@@ -17,13 +17,16 @@ and the package are not.
   Standard on-screen PIN pairing; nothing to enable on the TV.
 - **Network discovery** — TVs announce themselves over mDNS (`_androidtvremote2._tcp`). A manual
   **Connect by IP address** field covers static IPs and VLANs where mDNS does not cross.
-- **Two control styles** — a swipe pad (swipe to move, tap to select, hold for a long press) or a
-  classic D-pad. Long-press, key repeat and haptics work in both.
+- **Trackpad or D-pad** — a full-surface trackpad (swipe to move, tap to select, hold for a long
+  press) or a circular D-pad, switched from the control in the middle bar. Long-press, key repeat
+  and haptics work in both.
+- **Navigation and transport rows** — back, home and menu above rewind, play/pause and forward.
 - **Type on the TV** — text goes straight into TV search boxes and password fields, character by
   character, with backspace repeat.
 - **Voice search** — 8 kHz PCM streamed to the TV.
-- **App shortcuts** — one-tap launch for the apps installed on the TV, ordered and edited by hand.
-- **Volume** — on-screen rocker plus optional phone hardware volume keys.
+- **App shortcuts** — one-tap launch for the apps installed on the TV, ordered and edited by hand,
+  in a drawer behind the grid key so the main screen stays clean.
+- **Volume** — mute from the top bar; volume up/down from the phone's hardware keys (on by default).
 - **Quick Settings tile** — jump into the remote from the notification shade.
 - **Themes** — dark, light, system, optional pure black for OLED, optional wallpaper colours.
 
@@ -115,19 +118,23 @@ share pairing credentials with `com.ryzen.tvremote`.
 
 ## Design
 
-The look is a Swiss control panel: **zero corner radius**, no shadows, no gradients, **one red
-accent** used only for power, mute, voice-in-progress and failure, structure from 1dp rules, and
-**Inter** (bundled, OFL) as the single typeface.
+The look follows NVIDIA's own SHIELD remote app: three flat grey bars, a large trackpad slab, and
+two plain key rows. No shadows, no gradients, no cards — structure comes from 1dp hairlines, and
+**NVIDIA green** (`#76B900`) is the only colour, used only where something is live (connected,
+selected, primary action).
 
 | Token | Dark | Light |
 | --- | --- | --- |
-| Canvas | `#020617` | `#F8FAFC` |
-| Ink | `#F8FAFC` | `#020617` |
-| Rules | `#334155` | `#E2E8F0` |
-| Accent | `#EF4444` | `#DC2626` |
+| Canvas | `#141414` | `#F5F5F5` |
+| Bars | `#1E1E1E` | `#F0F0F0` |
+| Trackpad / D-pad | `#2B2B2B` | `#E2E2E2` |
+| Ink | `#FFFFFF` | `#121212` |
+| Accent | `#76B900` | `#4F7A00` |
 
-The direction, the rejected alternatives, the token tables and the pre-delivery checklist are
-documented in **[DESIGN.md](DESIGN.md)**.
+Radii are 4–6dp (the D-pad is a circle), the typeface is the platform face at regular weight, and
+the nav/transport glyphs are drawn directly rather than pulled from an icon font. The reference, the
+token tables, the deliberate deviations and the pre-delivery checklist are in
+**[DESIGN.md](DESIGN.md)**.
 
 ## How it works
 
@@ -192,10 +199,11 @@ the local network — plus an optional GitHub release check, which can be ignore
   (Apache-2.0) — protocol client, discovery, voice and shortcut implementation.
 - Protocol reference: [tronikos/androidtvremote2](https://github.com/tronikos/androidtvremote2),
   the library behind Home Assistant's Android TV Remote integration.
-- Design intelligence: [ui-ux-pro-max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)
-  (styles, palettes, typography, UX rules).
-- Typeface: [Inter](https://rsms.me/inter/) by Rasmus Andersson, SIL Open Font License 1.1 —
-  license text in [`LICENSE-Inter.txt`](LICENSE-Inter.txt).
+- Visual reference: NVIDIA's SHIELD TV remote app (`com.nvidia.shield.remote`), studied from its
+  store screenshots. No assets were copied; the layout, palette and glyph geometry are original
+  Compose code.
+- Design review: [ui-ux-pro-max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)
+  (UX rules and the pre-delivery checklist used for the earlier pass).
 - App logos used inside shortcut tiles are trademarks of their respective owners and are drawn only
   to label shortcuts.
 

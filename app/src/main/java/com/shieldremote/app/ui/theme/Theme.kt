@@ -15,15 +15,15 @@ import androidx.compose.ui.unit.dp
 import com.shieldremote.app.ui.ThemeMode
 
 /**
- * Swiss style: no corner radius anywhere. Panels, keys, sheets and cells are all rectangles, and
- * structure comes from 1dp rules rather than rounding.
+ * SHIELD geometry: the trackpad carries a small 6dp radius, buttons stay squarish, and the D-pad is
+ * the only true circle. Nothing is a pill.
  */
 private val RemoteShapes = Shapes(
-    extraSmall = RoundedCornerShape(0.dp),
-    small = RoundedCornerShape(0.dp),
-    medium = RoundedCornerShape(0.dp),
-    large = RoundedCornerShape(0.dp),
-    extraLarge = RoundedCornerShape(0.dp)
+    extraSmall = RoundedCornerShape(2.dp),
+    small = RoundedCornerShape(4.dp),
+    medium = RoundedCornerShape(6.dp),
+    large = RoundedCornerShape(8.dp),
+    extraLarge = RoundedCornerShape(12.dp)
 )
 
 /** True when wallpaper-based colours are available on this phone. */
@@ -46,8 +46,8 @@ fun TVRemoteTheme(
     val dark = isDarkTheme(themeMode)
     val context = LocalContext.current
 
-    // A single-accent palette cannot survive wallpaper sampling, so dynamic colour is ignored
-    // when it would introduce a second hue.
+    // The grey stack and the single green signal are the identity; wallpaper colours would
+    // replace both, so the toggle only applies when the user explicitly asks for it.
     var scheme = if (dark) BrandDarkScheme else BrandLightScheme
     if (dynamicColor && supportsDynamicColor) {
         scheme = if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)

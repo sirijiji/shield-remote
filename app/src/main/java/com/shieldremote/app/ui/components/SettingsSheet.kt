@@ -18,6 +18,7 @@ import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Contrast
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.Gamepad
+import androidx.compose.material.icons.rounded.ImportContacts
 import androidx.compose.material.icons.rounded.Keyboard
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.Palette
@@ -62,6 +63,7 @@ fun SettingsSheet(
     onVolumeKeysChange: (Boolean) -> Unit,
     onAutoKeyboardChange: (Boolean) -> Unit,
     onAddApp: () -> Unit,
+    onTvInput: () -> Unit,
     onSwitchTv: () -> Unit,
     onRePair: () -> Unit,
     onTutorial: () -> Unit,
@@ -109,9 +111,10 @@ fun SettingsSheet(
 
         SectionLabel("TV and apps")
         Group {
-            NavRow(0, 3, Icons.Rounded.Apps, "Add an app shortcut", "Press and hold a shortcut to edit, move or remove it", onAddApp)
-            NavRow(1, 3, Icons.Rounded.Tv, "Switch TV", "Scan your Wi-Fi or connect by IP address", onSwitchTv)
-            NavRow(2, 3, Icons.Rounded.Link, "Pair again", "Fixes a remote that stopped connecting", onRePair)
+            NavRow(0, 4, Icons.Rounded.Apps, "Add an app shortcut", "Press and hold a shortcut to edit, move or remove it", onAddApp)
+            NavRow(1, 4, Icons.Rounded.ImportContacts, "TV input", "Cycle the TV through its HDMI and other sources", onTvInput)
+            NavRow(2, 4, Icons.Rounded.Tv, "Switch TV", "Scan your Wi-Fi or connect by IP address", onSwitchTv)
+            NavRow(3, 4, Icons.Rounded.Link, "Pair again", "Fixes a remote that stopped connecting", onRePair)
         }
 
         SectionLabel("About")

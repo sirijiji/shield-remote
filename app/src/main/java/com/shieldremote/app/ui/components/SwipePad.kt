@@ -7,22 +7,17 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.KeyboardArrowDown
-import androidx.compose.material.icons.rounded.KeyboardArrowLeft
-import androidx.compose.material.icons.rounded.KeyboardArrowRight
-import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,13 +27,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.contentDescription
@@ -52,11 +45,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Swipe mode: one square surface. Swipe to move (one step per ~76dp of travel, hold still to
- * repeat slowly), tap to press OK, press and hold to long-press OK.
- *
- * Feedback is structural: a hairline crosshair, a bracketed contact square, and a rule that expands
- * from the tap point. Nothing decorative.
+ * SHIELD's trackpad: one large slab, a 1dp divider near the bottom and a caret in the click strip.
+ * Swipe to move (~76dp per step), tap to select, hold for a long press.
  */
 @Composable
 fun SwipePad(
@@ -86,232 +76,216 @@ fun SwipePad(
     val hold = animateFloatAsState(if (longPressed) 1f else 0f, Motion.spatial(), label = "hold")
 
     val scheme = MaterialTheme.colorScheme
-    val hair = scheme.onSurface
-    val accent = scheme.tertiary
+    val ink = scheme.onSurface
 
     Box(
         modifier = modifier
-            .background(scheme.surfaceContainerLow)
-            .border(1.dp, scheme.outlineVariant)
-            .semantics { contentDescription = "Swipe pad. Swipe to navigate, tap to select, hold to long press." }
-            .drawBehind {
-                val p = presence.value.coerceIn(0f, 1f)
-                val h = hold.value
+            .fillMaxSize()
+            .padding(horizontal = 10.dp, vertical = 6.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(6.dp))
+                .background(scheme.surfaceContainerHighest)
+                .semantics { contentDescription = "Trackpad. Swipe to navigate, tap to select, hold to long press." }
+                .drawBehind {
+                    val w = size.width
+                    val h = size.height
+                    val stripHeight = 44.dp.toPx()
 
-                // Resting reticle: two ticks marking the centre of the panel.
-                if (hasInteracted) {
-                    val middle = Offset(size.width / 2f, size.height / 2f)
-                    val tick = 8.dp.toPx()
-                    val rest = hair.copy(alpha = 0.22f)
-                    drawLine(rest, Offset(middle.x - tick, middle.y), Offset(middle.x + tick, middle.y), 1.dp.toPx())
-                    drawLine(rest, Offset(middle.x, middle.y - tick), Offset(middle.x, middle.y + tick), 1.dp.toPx())
-                }
-
-                if (p > 0.01f) {
-                    // Full-height and full-width crosshair.
+                    // Click strip: a hairline and a caret, exactly as the SHIELD app draws it.
+                    val stripY = h - stripHeight
                     drawLine(
-                        color = hair.copy(alpha = 0.14f * p),
-                        start = Offset(touchPos.x, 0f),
-                        end = Offset(touchPos.x, size.height),
+                        color = scheme.outline,
+                        start = Offset(14.dp.toPx(), stripY),
+                        end = Offset(w - 14.dp.toPx(), stripY),
                         strokeWidth = 1.dp.toPx()
                     )
+                    val caretH = 14.dp.toPx()
                     drawLine(
-                        color = hair.copy(alpha = 0.14f * p),
-                        start = Offset(0f, touchPos.y),
-                        end = Offset(size.width, touchPos.y),
-                        strokeWidth = 1.dp.toPx()
+                        color = ink.copy(alpha = 0.55f),
+                        start = Offset(w / 2f, stripY + (stripHeight - caretH) / 2f),
+                        end = Offset(w / 2f, stripY + (stripHeight + caretH) / 2f),
+                        strokeWidth = 1.5.dp.toPx()
                     )
-                    // Contact square: corners only, opening as a long-press arms.
-                    val half = (14.dp.toPx()) * (1f + 0.4f * h)
-                    val arm = half * 0.42f
-                    val stroke = 1.dp.toPx()
-                    val tone = lerp(hair.copy(alpha = 0.55f), accent, h)
-                    val l = touchPos.x - half
-                    val r = touchPos.x + half
-                    val t = touchPos.y - half
-                    val b = touchPos.y + half
-                    // Top-left
-                    drawLine(tone, Offset(l, t), Offset(l + arm, t), stroke)
-                    drawLine(tone, Offset(l, t), Offset(l, t + arm), stroke)
-                    // Top-right
-                    drawLine(tone, Offset(r - arm, t), Offset(r, t), stroke)
-                    drawLine(tone, Offset(r, t), Offset(r, t + arm), stroke)
-                    // Bottom-left
-                    drawLine(tone, Offset(l, b - arm), Offset(l, b), stroke)
-                    drawLine(tone, Offset(l, b), Offset(l + arm, b), stroke)
-                    // Bottom-right
-                    drawLine(tone, Offset(r - arm, b), Offset(r, b), stroke)
-                    drawLine(tone, Offset(r, b - arm), Offset(r, b), stroke)
-                }
 
-                // A single expanding square acknowledges a tap.
-                val pulse = tapPulse.value
-                if (pulse < 1f) {
-                    val grow = 10.dp.toPx() + 52.dp.toPx() * pulse
-                    drawRect(
-                        color = hair.copy(alpha = (1f - pulse) * 0.45f),
-                        topLeft = Offset(tapPos.x - grow, tapPos.y - grow),
-                        size = Size(grow * 2, grow * 2),
-                        style = Stroke(width = 1.dp.toPx())
-                    )
-                }
-            }
-            .pointerInput(stepPx) {
-                awaitEachGesture {
-                    val down = awaitFirstDown(requireUnconsumed = false)
-                    hasInteracted = true
-                    touchPos = down.position
-                    touching = true
-                    var anchor = down.position
-                    var moved = false
-                    var repeatJob: Job? = null
-                    var lastDir: RemoteKey? = null
-                    var longActive = false
-                    val slop = viewConfiguration.touchSlop
-
-                    fun step(dir: RemoteKey) {
-                        haptic(HapticFeedbackType.TextHandleMove)
-                        onKey(dir, KeyDirection.SHORT)
-                        flashDir = dir
-                        scope.launch {
-                            flash.snapTo(1f)
-                            flash.animateTo(0f, tween(420))
+                    val p = presence.value.coerceIn(0f, 1f)
+                    if (p > 0.01f) {
+                        // Position, shown as a hairline crosshair rather than a glowing dot.
+                        drawLine(
+                            color = ink.copy(alpha = 0.10f * p),
+                            start = Offset(touchPos.x, 0f),
+                            end = Offset(touchPos.x, stripY),
+                            strokeWidth = 1.dp.toPx()
+                        )
+                        drawLine(
+                            color = ink.copy(alpha = 0.10f * p),
+                            start = Offset(0f, touchPos.y),
+                            end = Offset(w, touchPos.y),
+                            strokeWidth = 1.dp.toPx()
+                        )
+                        // The edge you are pushing against lights up while you swipe.
+                        val f = flash.value
+                        val dir = flashDir
+                        if (f > 0.01f && dir != null) {
+                            val len = 84.dp.toPx()
+                            val inset = 10.dp.toPx()
+                            val stroke = 2.dp.toPx()
+                            val alpha = 0.55f * f
+                            when (dir) {
+                                RemoteKey.DPAD_UP -> drawLine(
+                                    ink.copy(alpha = alpha),
+                                    Offset(w / 2f - len / 2f, inset),
+                                    Offset(w / 2f + len / 2f, inset),
+                                    stroke
+                                )
+                                RemoteKey.DPAD_DOWN -> drawLine(
+                                    ink.copy(alpha = alpha),
+                                    Offset(w / 2f - len / 2f, stripY - inset),
+                                    Offset(w / 2f + len / 2f, stripY - inset),
+                                    stroke
+                                )
+                                RemoteKey.DPAD_LEFT -> drawLine(
+                                    ink.copy(alpha = alpha),
+                                    Offset(inset, h / 2f - len / 2f),
+                                    Offset(inset, h / 2f + len / 2f),
+                                    stroke
+                                )
+                                else -> drawLine(
+                                    ink.copy(alpha = alpha),
+                                    Offset(w - inset, h / 2f - len / 2f),
+                                    Offset(w - inset, h / 2f + len / 2f),
+                                    stroke
+                                )
+                            }
                         }
                     }
 
-                    val longJob = scope.launch {
-                        delay(400L)
-                        if (!moved) {
-                            longActive = true
-                            longPressed = true
-                            haptic(HapticFeedbackType.LongPress)
-                            onKey(RemoteKey.DPAD_CENTER, KeyDirection.START_LONG)
-                        }
+                    val pulse = tapPulse.value
+                    if (pulse < 1f) {
+                        val r = 10.dp.toPx() + 34.dp.toPx() * pulse
+                        drawCircle(
+                            color = ink.copy(alpha = (1f - pulse) * 0.35f),
+                            radius = r,
+                            center = tapPos,
+                            style = Stroke(1.dp.toPx())
+                        )
                     }
+                }
+                .pointerInput(stepPx) {
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        hasInteracted = true
+                        touchPos = down.position
+                        touching = true
+                        var anchor = down.position
+                        var moved = false
+                        var repeatJob: Job? = null
+                        var lastDir: RemoteKey? = null
+                        var longActive = false
+                        val slop = viewConfiguration.touchSlop
 
-                    try {
-                        while (true) {
-                            val event = awaitPointerEvent()
-                            val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                            if (!change.pressed) {
+                        fun step(dir: RemoteKey) {
+                            haptic(HapticFeedbackType.TextHandleMove)
+                            onKey(dir, KeyDirection.SHORT)
+                            flashDir = dir
+                            scope.launch {
+                                flash.snapTo(1f)
+                                flash.animateTo(0f, tween(320))
+                            }
+                        }
+
+                        val longJob = scope.launch {
+                            delay(400L)
+                            if (!moved) {
+                                longActive = true
+                                longPressed = true
+                                haptic(HapticFeedbackType.LongPress)
+                                onKey(RemoteKey.DPAD_CENTER, KeyDirection.START_LONG)
+                            }
+                        }
+
+                        try {
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                                if (!change.pressed) {
+                                    change.consume()
+                                    break
+                                }
+                                touchPos = change.position
+                                val dx = change.position.x - anchor.x
+                                val dy = change.position.y - anchor.y
+
+                                if (!moved && !longActive && SwipeMath.exceeds(dx, dy, slop)) {
+                                    moved = true
+                                    longJob.cancel()
+                                }
+                                if (!moved) continue
                                 change.consume()
-                                break
-                            }
-                            touchPos = change.position
-                            val dx = change.position.x - anchor.x
-                            val dy = change.position.y - anchor.y
 
-                            if (!moved && !longActive && SwipeMath.exceeds(dx, dy, slop)) {
-                                moved = true
-                                longJob.cancel()
-                            }
-                            if (!moved) continue
-                            change.consume()
+                                if (repeatJob != null &&
+                                    SwipeMath.exceeds(dx, dy, slop * 2) &&
+                                    SwipeMath.direction(dx, dy) != lastDir
+                                ) {
+                                    repeatJob.cancel()
+                                    repeatJob = null
+                                }
 
-                            // Finger drifting a different way than the held repeat: stop repeating.
-                            if (repeatJob != null &&
-                                SwipeMath.exceeds(dx, dy, slop * 2) &&
-                                SwipeMath.direction(dx, dy) != lastDir
-                            ) {
-                                repeatJob.cancel()
-                                repeatJob = null
-                            }
-
-                            if (SwipeMath.exceeds(dx, dy, stepPx)) {
-                                val dir = SwipeMath.direction(dx, dy)
-                                lastDir = dir
-                                anchor = change.position
-                                step(dir)
-                                // Holding still after a swipe keeps stepping in that direction.
-                                repeatJob?.cancel()
-                                repeatJob = scope.launchKeyRepeat(initialDelayMs = 550L, intervalMs = 300L) {
+                                if (SwipeMath.exceeds(dx, dy, stepPx)) {
+                                    val dir = SwipeMath.direction(dx, dy)
+                                    lastDir = dir
+                                    anchor = change.position
                                     step(dir)
+                                    repeatJob?.cancel()
+                                    repeatJob = scope.launchKeyRepeat(initialDelayMs = 550L, intervalMs = 300L) {
+                                        step(dir)
+                                    }
                                 }
                             }
-                        }
 
-                        longJob.cancel()
-                        if (longActive) {
-                            longActive = false
-                            onKey(RemoteKey.DPAD_CENTER, KeyDirection.END_LONG)
-                        } else if (!moved) {
-                            haptic(HapticFeedbackType.LongPress)
-                            onKey(RemoteKey.DPAD_CENTER, KeyDirection.SHORT)
-                            tapPos = touchPos
-                            scope.launch {
-                                tapPulse.snapTo(0f)
-                                tapPulse.animateTo(1f, tween(520))
+                            longJob.cancel()
+                            if (longActive) {
+                                longActive = false
+                                onKey(RemoteKey.DPAD_CENTER, KeyDirection.END_LONG)
+                            } else if (!moved) {
+                                haptic(HapticFeedbackType.LongPress)
+                                onKey(RemoteKey.DPAD_CENTER, KeyDirection.SHORT)
+                                tapPos = touchPos
+                                scope.launch {
+                                    tapPulse.snapTo(0f)
+                                    tapPulse.animateTo(1f, tween(420))
+                                }
                             }
+                        } finally {
+                            longJob.cancel()
+                            repeatJob?.cancel()
+                            if (longActive) onKey(RemoteKey.DPAD_CENTER, KeyDirection.END_LONG)
+                            longPressed = false
+                            touching = false
                         }
-                    } finally {
-                        longJob.cancel()
-                        repeatJob?.cancel()
-                        if (longActive) {
-                            // Gesture cancelled mid long-press: still release the TV key.
-                            onKey(RemoteKey.DPAD_CENTER, KeyDirection.END_LONG)
-                        }
-                        longPressed = false
-                        touching = false
                     }
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            AnimatedVisibility(visible = !hasInteracted, enter = fadeIn(), exit = fadeOut()) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "Swipe to navigate",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = scheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "Tap to select",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = scheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
                 }
-            },
-        contentAlignment = Alignment.Center
-    ) {
-        EdgeChevron(Icons.Rounded.KeyboardArrowUp, RemoteKey.DPAD_UP, flashDir, { flash.value }, Modifier.align(Alignment.TopCenter))
-        EdgeChevron(Icons.Rounded.KeyboardArrowDown, RemoteKey.DPAD_DOWN, flashDir, { flash.value }, Modifier.align(Alignment.BottomCenter))
-        EdgeChevron(Icons.Rounded.KeyboardArrowLeft, RemoteKey.DPAD_LEFT, flashDir, { flash.value }, Modifier.align(Alignment.CenterStart))
-        EdgeChevron(Icons.Rounded.KeyboardArrowRight, RemoteKey.DPAD_RIGHT, flashDir, { flash.value }, Modifier.align(Alignment.CenterEnd))
-
-        AnimatedVisibility(visible = !hasInteracted, enter = fadeIn(), exit = fadeOut()) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                Text(
-                    text = "SWIPE TO NAVIGATE",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = scheme.onSurfaceVariant
-                )
-                Text(
-                    text = "TAP TO SELECT",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = scheme.onSurfaceVariant.copy(alpha = 0.6f)
-                )
             }
         }
     }
-}
-
-/** Faint arrow on each edge; the one matching the last step goes to full ink. */
-@Composable
-private fun EdgeChevron(
-    icon: ImageVector,
-    key: RemoteKey,
-    flashDir: RemoteKey?,
-    flash: () -> Float,
-    modifier: Modifier
-) {
-    val scheme = MaterialTheme.colorScheme
-    val active = flashDir == key
-    val rest = scheme.onSurfaceVariant.copy(alpha = 0.45f)
-    val kick = with(androidx.compose.ui.platform.LocalDensity.current) { 5.dp.toPx() }
-    Icon(
-        imageVector = icon,
-        contentDescription = null,
-        tint = if (active) lerp(rest, scheme.onSurface, flash().coerceIn(0f, 1f)) else rest,
-        modifier = modifier
-            .padding(12.dp)
-            .size(24.dp)
-            .graphicsLayer {
-                if (active) {
-                    val f = flash()
-                    when (key) {
-                        RemoteKey.DPAD_UP -> translationY = -kick * f
-                        RemoteKey.DPAD_DOWN -> translationY = kick * f
-                        RemoteKey.DPAD_LEFT -> translationX = -kick * f
-                        else -> translationX = kick * f
-                    }
-                }
-            }
-    )
 }

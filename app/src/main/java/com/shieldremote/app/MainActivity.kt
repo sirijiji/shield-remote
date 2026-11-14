@@ -70,7 +70,7 @@ import com.shieldremote.app.ui.components.ControlDeck
 import com.shieldremote.app.ui.components.DPad
 import com.shieldremote.app.ui.components.DevicePickerSheet
 import com.shieldremote.app.ui.components.LocalHapticsEnabled
-import com.shieldremote.app.ui.components.ModeSwitch
+import com.shieldremote.app.ui.components.ModeBar
 import com.shieldremote.app.ui.components.PairingSheet
 import com.shieldremote.app.ui.components.SettingsSheet
 import com.shieldremote.app.ui.components.SwipePad
@@ -183,6 +183,7 @@ fun TVRemoteScreen(viewModel: MainViewModel) {
     val availableUpdate by viewModel.availableUpdate.collectAsState()
 
     var showAddApp by remember { mutableStateOf(false) }
+    var appsOpen by remember { mutableStateOf(false) }
     var editingApp by remember { mutableStateOf<AppShortcut?>(null) }
 
     val context = LocalContext.current
@@ -232,14 +233,17 @@ fun TVRemoteScreen(viewModel: MainViewModel) {
             status = status,
             deviceName = deviceName,
             hasTv = hasTv,
+            isMuted = volumeState.isMuted,
             onDevicePickerClick = { viewModel.showDevicePicker.value = true },
             onPowerKey = { direction -> viewModel.sendKey(RemoteKey.POWER, direction) },
-            onSettingsClick = { viewModel.showSettings.value = true }
+            onMuteClick = { viewModel.sendKey(RemoteKey.VOLUME_MUTE) },
+            onSettingsClick = { viewModel.showSettings.value = true },
+            onVoiceClick = startVoice
         )
 
-        // Shortcuts step aside while typing so the pad keeps its room above the keyboard.
+        // The app dock lives in a drawer, as on the SHIELD app: hidden until asked for.
         AnimatedVisibility(
-            visible = !isTyping,
+            visible = appsOpen && !isTyping,
             enter = fadeIn() + expandVertically(),
             exit = fadeOut() + shrinkVertically()
         ) {
@@ -251,7 +255,9 @@ fun TVRemoteScreen(viewModel: MainViewModel) {
                 onEdit = { editingApp = it; showAddApp = true },
                 onMove = { app, delta -> viewModel.moveShortcut(app.id, delta) },
                 onRemove = { viewModel.removeShortcut(it.id) },
-                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 16.dp)
+                modifier = Modifier
+                    .background(scheme.surfaceContainer)
+                    .padding(horizontal = 12.dp, vertical = 12.dp)
             )
         }
 
@@ -263,8 +269,7 @@ fun TVRemoteScreen(viewModel: MainViewModel) {
             AnimatedContent(
                 targetState = connected,
                 transitionSpec = {
-                    (fadeIn(Motion.effects()) + scaleIn(Motion.spatial(), initialScale = 0.92f)) togetherWith
-                        fadeOut(Motion.effects())
+                    fadeIn(Motion.effects()) togetherWith fadeOut(Motion.effects())
                 },
                 label = "stage"
             ) { isConnected ->
@@ -273,16 +278,18 @@ fun TVRemoteScreen(viewModel: MainViewModel) {
                         modifier = Modifier.fillMaxSize(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        ModeSwitch(
+                        ModeBar(
                             mode = controlMode,
                             onModeChange = { viewModel.setControlMode(it) },
-                            modifier = Modifier.fillMaxWidth()
+                            appsOpen = appsOpen,
+                            onAppsClick = { appsOpen = !appsOpen },
+                            onKeyboardClick = { viewModel.openTyping() },
+                            enabled = connected
                         )
                         AnimatedContent(
                             targetState = controlMode,
                             transitionSpec = {
-                                (fadeIn(Motion.effects()) + scaleIn(Motion.spatial(), initialScale = 0.9f)) togetherWith
-                                    (fadeOut(Motion.effects()) + scaleOut(Motion.effects(), targetScale = 0.96f))
+                                fadeIn(Motion.effects()) togetherWith fadeOut(Motion.effects())
                             },
                             modifier = Modifier
                                 .weight(1f)
@@ -292,19 +299,17 @@ fun TVRemoteScreen(viewModel: MainViewModel) {
                             when (mode) {
                                 ControlMode.SWIPE -> SwipePad(
                                     onKey = { key, direction -> viewModel.sendKey(key, direction) },
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(16.dp)
+                                    modifier = Modifier.fillMaxSize()
                                 )
-                                ControlMode.DPAD -> BoxWithConstraints(
+                                ControlMode.DPAD -> Box(
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .padding(16.dp),
+                                        .padding(24.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     DPad(
                                         onKey = { key, direction -> viewModel.sendKey(key, direction) },
-                                        modifier = Modifier.size(minOf(maxWidth, maxHeight, 300.dp))
+                                        modifier = Modifier.fillMaxSize()
                                     )
                                 }
                             }
@@ -366,14 +371,8 @@ fun TVRemoteScreen(viewModel: MainViewModel) {
             }
         } else {
             ControlDeck(
-                isMuted = volumeState.isMuted,
-                volumeLevel = volumeState.level,
-                volumeMax = volumeState.max,
                 enabled = connected,
-                onKey = { key -> viewModel.sendKey(key) },
-                onKeyboardClick = { viewModel.openTyping() },
-                onVoiceClick = startVoice,
-                modifier = Modifier.padding(bottom = 0.dp)
+                onKey = { key -> viewModel.sendKey(key) }
             )
         }
     }
@@ -423,6 +422,7 @@ fun TVRemoteScreen(viewModel: MainViewModel) {
                 editingApp = null
                 showAddApp = true
             },
+            onTvInput = { viewModel.sendKey(RemoteKey.TV_INPUT) },
             onSwitchTv = {
                 viewModel.showSettings.value = false
                 viewModel.showDevicePicker.value = true
