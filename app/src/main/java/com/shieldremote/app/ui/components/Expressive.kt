@@ -119,7 +119,7 @@ fun PressSurface(
 
     Box(
         modifier = modifier
-            .alpha(if (enabled) 1f else 0.35f)
+            .alpha(if (enabled) 1f else 0.5f)
             .pressMorph(pressed, restCorner, pressedCorner)
             .background(color)
             .then(if (border != null) Modifier.border(1.dp, border) else Modifier)
@@ -191,7 +191,11 @@ fun ExpressiveButton(
     val container: Color
     val content: Color
     val border: Color?
-    when (tone) {
+    if (!enabled) {
+        container = scheme.surfaceContainerHigh
+        content = scheme.onSurfaceVariant
+        border = null
+    } else when (tone) {
         ButtonTone.Primary -> {
             container = scheme.primary
             content = scheme.onPrimary
